@@ -160,3 +160,40 @@ export async function validateCoupon(code: string, user_id: string) {
     return { error: "Error al validar cupón" }
   }
 }
+
+export async function getCouponByUser() {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session || !session.user) {
+      return { error: 'No autorizado' }
+    }
+
+    const coupons = await prisma.coupon.findMany({
+      where: {
+        used_by: {
+          some: {
+            user_id: session.user.id,
+          },
+        },
+        active: true
+      },
+      include: {
+        used_by: {
+          where: { user_id: session.user.id },
+        },
+      },
+      orderBy: {
+        created_at: 'desc',
+      },
+    });
+
+
+    const codes = coupons? coupons.map(c => c.code) : []
+
+    return {success:true, couponsCodes:codes};
+  } catch (error) {
+    console.error('Error al obtener cupones:', error);
+    return{ error: 'Error al obtener los cupones' }
+  }
+}

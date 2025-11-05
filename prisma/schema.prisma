@@ -176,8 +176,8 @@ model Cart {
   user       Profile   @relation(fields: [user_id], references: [id], onDelete: Cascade)
   cart_items CartItem[]
 
-  @@unique([user_id])
   @@index([user_id])
+  @@unique([user_id])
 }
 
 //////////////////////////////////////////////////////////

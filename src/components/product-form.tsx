@@ -22,7 +22,7 @@ export function ProductForm({ product }: ProductFormProps) {
   const [name, setName] = useState(product?.name || "")
   const [description, setDescription] = useState(product?.description || "")
   const [priceInCents, setPriceInCents] = useState(product ? product.price_in_cents / 100 : 0)
-  const [imageUrl, setImageUrl] = useState(product?.image_url || "")
+  const [image, setImage] = useState<File | null>(null)
   const [category, setCategory] = useState(product?.category || "")
   const [available, setAvailable] = useState(product?.available ?? true)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -43,7 +43,7 @@ export function ProductForm({ product }: ProductFormProps) {
         name,
         description,
         price: Math.round(priceInCents * 100),
-        image: imageUrl || null,
+        image: image || null,
         category: category || null,
         available,
       }
@@ -132,19 +132,19 @@ export function ProductForm({ product }: ProductFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="imageUrl">URL de la Imagen</Label>
+        <Label htmlFor="imageFile">Imagen</Label>
         <Input
-          id="imageUrl"
-          type="url"
-          placeholder="https://ejemplo.com/imagen.jpg"
-          value={imageUrl}
-          onChange={(e) => setImageUrl(e.target.value)}
+          id="imageFile"
+          type="file"
+          accept="image/*"
+          onChange={(e) => setImage(e.target.files?.[0] || null)}
           className="border-amber-200 focus:border-amber-400"
         />
         <p className="text-xs text-muted-foreground">
-          Ingresa la URL de una imagen o déjalo vacío para usar una imagen por defecto
+          Sube una imagen desde tu dispositivo o déjalo vacío para usar una imagen por defecto
         </p>
       </div>
+
 
       <div className="flex items-center gap-2">
         <input

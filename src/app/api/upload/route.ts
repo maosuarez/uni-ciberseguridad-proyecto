@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
       image: imageRecord,
     })
   } catch (err: any) {
-    console.error("❌ Error subiendo archivo:", err)
+    console.error("Error subiendo archivo:", err)
     return NextResponse.json(
       { error: "Error interno al procesar la imagen." },
       { status: 500 },

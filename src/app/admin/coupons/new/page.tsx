@@ -2,6 +2,8 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { CouponForm } from "@/components/coupon-form"
+import { Navbar } from "@/components/navbar"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default async function NewCouponPage() {
   const session = await getServerSession(authOptions)
@@ -11,13 +13,22 @@ export default async function NewCouponPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-2xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-balance">Crear Nuevo Cupón</h1>
-        <p className="text-muted-foreground mt-2">Genera un cupón de descuento para tus clientes</p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50">
+      <Navbar />
 
-      <CouponForm />
+      <main className="container mx-auto px-4 py-8">
+        <div className="max-w-2xl mx-auto">
+          <Card className="border-amber-200">
+            <CardHeader>
+              <CardTitle className="text-2xl text-amber-900">Crear Nuevo Cupon</CardTitle>
+              <p className="text-muted-foreground mt-2">Genera un cupón de descuento para tus clientes</p>
+            </CardHeader>
+            <CardContent>
+              <CouponForm />
+            </CardContent>
+          </Card>
+        </div>
+      </main>
     </div>
   )
 }
