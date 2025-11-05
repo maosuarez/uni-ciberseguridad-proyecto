@@ -14,7 +14,7 @@ generator client {
 
 model Account {
   id                String  @id @default(cuid())
-  userId            String
+  user_id            String
   type              String
   provider          String
   providerAccountId String
@@ -26,20 +26,20 @@ model Account {
   id_token          String?
   session_state     String?
 
-  user Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user Profile @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
-  @@index([userId])
+  @@index([user_id])
 }
 
 model Session {
   id           String   @id @default(cuid())
   sessionToken String   @unique
-  userId       String
+  user_id       String
   expires      DateTime
-  user         Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         Profile  @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
-  @@index([userId])
+  @@index([user_id])
 }
 
 model VerificationToken {
@@ -63,6 +63,8 @@ model Profile {
   is_admin      Boolean   @default(false)
   is_approved   Boolean   @default(false)
   emailVerified DateTime?
+  role          String    @default("user") // user, admin
+  status        String    @default("pending") // pending, approved, rejected
   created_at    DateTime  @default(now())
   updated_at    DateTime  @updatedAt
 
@@ -72,7 +74,11 @@ model Profile {
   carts         Cart[]
   orders        Order[]
   reviews       Review[]
-  couponUsages  CouponUsage[]
+  coupons       CouponUsage[]
+
+  @@index([email])
+  @@index([status])
+  @@index([role])
 }
 
 //////////////////////////////////////////////////////////
@@ -105,14 +111,24 @@ model Product {
 model Coupon {
   id            String    @id @default(cuid())
   code          String    @unique
+  hash        String   @unique // Hash del código para validación segura
   description   String?
+  expires_at    DateTime?
   discount      Int
   valid_until   DateTime?
+  active      Boolean  @default(true)
   new_user_only Boolean   @default(false)
   created_at    DateTime  @default(now())
   updated_at    DateTime  @updatedAt
+  maxUses     Int?     // Número máximo de usos (null = ilimitado)
+  usedCount   Int      @default(0)
 
   used_by CouponUsage[]
+  orders      Order[]
+
+  @@index([code])
+  @@index([active])
+  @@index([expires_at])
 }
 
 model CouponUsage {
@@ -120,11 +136,14 @@ model CouponUsage {
   coupon_id String
   user_id   String
   used_at   DateTime @default(now())
+  used      Boolean  @default(false)
 
   coupon Coupon  @relation(fields: [coupon_id], references: [id], onDelete: Cascade)
   user   Profile @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@unique([coupon_id, user_id])
+  @@index([user_id])
+  @@index([coupon_id])
 }
 
 //////////////////////////////////////////////////////////
@@ -157,8 +176,8 @@ model Cart {
   user       Profile   @relation(fields: [user_id], references: [id], onDelete: Cascade)
   cart_items CartItem[]
 
-  @@unique([user_id])
   @@index([user_id])
+  @@unique([user_id])
 }
 
 //////////////////////////////////////////////////////////
@@ -177,6 +196,8 @@ model CartItem {
   product Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
 
   @@unique([cart_id, product_id])
+  @@index([cart_id])
+  @@index([product_id])
 }
 
 //////////////////////////////////////////////////////////
@@ -187,6 +208,8 @@ model Order {
   id                       String   @id @default(cuid())
   user_id                  String
   total_amount_in_cents    Int
+  discount        Decimal?
+  coupon_id        String?
   status                   String   @default("pending")
   stripe_payment_intent_id String?
   created_at               DateTime @default(now())
@@ -195,6 +218,13 @@ model Order {
   user        Profile  @relation(fields: [user_id], references: [id], onDelete: Cascade)
   order_items OrderItem[]
   payments    Payment[]
+  coupon      Coupon?     @relation(fields: [coupon_id], references: [id])
+
+  @@index([user_id])
+  @@index([status])
+  @@index([stripe_payment_intent_id])
+  @@index([coupon_id])
+
 }
 
 //////////////////////////////////////////////////////////
@@ -212,6 +242,9 @@ model OrderItem {
 
   order   Order    @relation(fields: [order_id], references: [id], onDelete: Cascade)
   product Product? @relation(fields: [product_id], references: [id], onDelete: SetNull)
+
+  @@index([order_id])
+  @@index([product_id])
 }
 
 //////////////////////////////////////////////////////////
@@ -231,6 +264,8 @@ model Review {
   user    Profile @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@unique([product_id, user_id])
+  @@index([product_id])
+  @@index([user_id])
 }
 
 //////////////////////////////////////////////////////////

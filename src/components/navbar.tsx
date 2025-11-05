@@ -1,17 +1,17 @@
-// En src/components/Navbar.tsx
-
 import Link from "next/link"
 import { getCurrentUser } from "@/lib/auth-utils"
 import { prisma } from "@/lib/db"
 import { Button } from "@/components/ui/button"
-import { ShoppingCart, User, LogOut } from "lucide-react"
+import { ShoppingCart, User, LogOut, Shield, Package } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Badge } from "@/components/ui/badge"
 
 export async function Navbar() {
   const user = await getCurrentUser()
@@ -60,21 +60,59 @@ export async function Navbar() {
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="hover:bg-amber-50">
+                  <Button variant="ghost" size="icon" className="hover:bg-amber-50 relative">
                     <User className="h-5 w-5 text-amber-900" />
+                    {user.role === "admin" && (
+                      <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center bg-amber-600">
+                        <Shield className="h-2.5 w-2.5" />
+                      </Badge>
+                    )}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">{user.name}</p>
+                      <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                      {user.role === "admin" && (
+                        <Badge variant="secondary" className="w-fit mt-1">
+                          <Shield className="w-3 h-3 mr-1" />
+                          Administrador
+                        </Badge>
+                      )}
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
                     <Link href="/orders" className="cursor-pointer">
+                      <Package className="h-4 w-4 mr-2" />
                       Mis Pedidos
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/admin" className="cursor-pointer">
-                      Administrar Productos
-                    </Link>
-                  </DropdownMenuItem>
+                  {user.role === "admin" && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel className="text-xs text-muted-foreground">Administración</DropdownMenuLabel>
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin" className="cursor-pointer">
+                          <Package className="h-4 w-4 mr-2" />
+                          Productos
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin/users" className="cursor-pointer">
+                          <User className="h-4 w-4 mr-2" />
+                          Usuarios
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin/coupons" className="cursor-pointer">
+                          <ShoppingCart className="h-4 w-4 mr-2" />
+                          Cupones
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
                     <Link href="/api/auth/signout" className="flex w-full items-center gap-2 cursor-pointer">

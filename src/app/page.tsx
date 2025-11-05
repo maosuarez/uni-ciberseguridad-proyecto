@@ -3,6 +3,7 @@ import { Navbar } from "@/components/navbar"
 import { ProductCard } from "@/components/product-card"
 import type { Product } from "@/lib/types"
 import { calculateAverageRating } from "@/lib/utils/format"
+// import { useState } from "react"
 
 export default async function HomePage() {
   const products = await prisma.product.findMany({
@@ -18,6 +19,8 @@ export default async function HomePage() {
   })
 
   const categories = Array.from(new Set(products.map((p) => p.category).filter(Boolean)))
+
+  //const [shownProducts, setShownProducts] = useState<Array<Product>>()
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50">

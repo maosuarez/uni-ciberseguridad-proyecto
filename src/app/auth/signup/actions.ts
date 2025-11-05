@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/db"
 import bcrypt from "bcryptjs"
+import crypto from "crypto"
 
 export async function registerUser(formData: FormData) {
   const name = formData.get("name") as string
@@ -48,16 +49,43 @@ export async function registerUser(formData: FormData) {
     // Hash de la contraseña con bcrypt (10 rounds)
     const hashedPassword = await bcrypt.hash(password, 10)
 
-    // Crear usuario
-    await prisma.profile.create({
+    const newUser = await prisma.profile.create({
       data: {
-        full_name:name,
+        full_name: name,
         email,
         password: hashedPassword,
+        status: "pending", // Usuario queda en lista de espera
+        role: "user", // Rol por defecto
       },
     })
 
-    return { success: true }
+    const welcomeCouponCode = `WELCOME-${crypto.randomBytes(4).toString("hex").toUpperCase()}`
+    const couponHash = crypto.createHash("sha256").update(welcomeCouponCode).digest("hex")
+
+    const welcomeCoupon = await prisma.coupon.create({
+      data: {
+        code: welcomeCouponCode,
+        hash: couponHash,
+        discount: 15, // 15% de descuento
+        description: "Cupón de bienvenida",
+        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 días
+        maxUses: 1,
+      },
+    })
+
+    // Asignar cupón al usuario
+    await prisma.couponUsage.create({
+      data: {
+        user_id: newUser.id,
+        coupon_id: welcomeCoupon.id,
+      },
+    })
+
+    return {
+      success: true,
+      message:
+        "Cuenta creada exitosamente. Tu solicitud está pendiente de aprobación por un administrador. Recibirás un cupón de bienvenida una vez aprobada.",
+    }
   } catch (error) {
     console.error("[v0] Error al registrar usuario:", error)
     return { error: "Error al crear la cuenta. Por favor intenta de nuevo." }

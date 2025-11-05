@@ -40,14 +40,16 @@ export interface VerificationToken {
 export interface Profile {
   id: string
   full_name?: string | null
+  status: string
   email: string
   password?: string | null
   avatar_url?: string | null
-  is_admin: boolean
-  is_approved: boolean
+  is_admin?: boolean
+  is_approved?: boolean
+  role: string
   emailVerified?: Date | null
   created_at: Date
-  updated_at: Date
+  updated_at?: Date
 
   accounts?: Account[]
   sessions?: Session[]
@@ -84,14 +86,24 @@ export interface Product {
 export interface Coupon {
   id: string
   code: string
+  hash: string
   description?: string | null
+  expires_at?: Date | null
   discount: number
   valid_until?: Date | null
+  active: boolean
   new_user_only: boolean
   created_at: Date
   updated_at: Date
+  maxUses?: number | null
+  usedCount: number
+
+  _count?:{
+    used_by: number
+  }
 
   used_by?: CouponUsage[]
+  orders?: Order[]
 }
 
 export interface CouponUsage {

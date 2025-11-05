@@ -3,13 +3,13 @@
 import { prisma } from "@/lib/db"
 import { requireAuth } from "@/lib/auth-utils"
 import { revalidatePath } from "next/cache"
-import { Decimal } from "@prisma/client/runtime/library"
+import { handleSubmitImage } from "@/lib/image"
 
 interface ProductData {
   name: string
   description: string
   price: number
-  image: string | null
+  image: File | null
   category: string | null
   available: boolean
 }
@@ -30,13 +30,15 @@ export async function createProduct(productData: ProductData) {
     throw new Error("Precio inválido")
   }
 
+  const image_url = productData.image ? await handleSubmitImage(productData.image) : ''
+
   try {
     await prisma.product.create({
       data: {
         name: productData.name,
         description: productData.description,
         price_in_cents: productData.price / 100,
-        image_url: productData.image,
+        image_url: image_url,
         category: productData.category,
         available: productData.available,
       },
@@ -70,6 +72,8 @@ export async function updateProduct(productId: string, productData: ProductData)
     throw new Error("Precio inválido")
   }
 
+  const image_url = !productData.image ? await handleSubmitImage(productData.image) : ''
+
   try {
     await prisma.product.update({
       where: { id: productId },
@@ -77,7 +81,7 @@ export async function updateProduct(productId: string, productData: ProductData)
         name: productData.name,
         description: productData.description,
         price_in_cents: productData.price / 100,
-        image_url: productData.image,
+        image_url: image_url,
         category: productData.category,
         available: productData.available,
       },

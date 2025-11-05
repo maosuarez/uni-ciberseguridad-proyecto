@@ -1,6 +1,20 @@
 import { prisma } from "@/lib/db";
+import bcrypt from "bcryptjs";
 
 async function main() {
+  console.log("🌱 Iniciando seed...");
+
+  // Limpieza opcional de tablas
+  await prisma.orderItem.deleteMany();
+  await prisma.order.deleteMany();
+  await prisma.cartItem.deleteMany();
+  await prisma.cart.deleteMany();
+  await prisma.profile.deleteMany();
+  await prisma.product.deleteMany();
+
+  console.log("🧹 Tablas limpiadas.");
+
+  // Crear productos de ejemplo
   const products = [
     {
       name: "Arepa Reina Pepiada",
@@ -112,19 +126,86 @@ async function main() {
     },
   ];
 
-  // Limpia la tabla antes de insertar (opcional)
-  await prisma.product.deleteMany();
-  console.log("🧹 Tabla products limpiada.");
-
-  // Inserta los productos
   await prisma.product.createMany({ data: products });
-  console.log("✅ Productos de ejemplo insertados correctamente.");
+  console.log("✅ Productos de ejemplo creados.");
+
+  // Hashear contraseña del admin
+  const hashedAdminPass = await bcrypt.hash(process.env.ADMIN_PASSWORD!, 12);
+
+  // Crear usuario administrador
+  const admin = await prisma.profile.create({
+    data: {
+      full_name: process.env.ADMIN_NAME!,
+      email: process.env.ADMIN_EMAIL!,
+      password: hashedAdminPass,
+      is_admin: true,
+      is_approved: true,
+      role: "admin",
+      status: "approved",
+    },
+  });
+
+  console.log(`👑 Usuario administrador creado: ${admin.email}`);
+
+  // Obtener producto existente
+  const reina = await prisma.product.findFirst({
+    where: { name: "Arepa Reina Pepiada" },
+  });
+
+  // Crear usuario cliente de prueba
+  const clientPass = await bcrypt.hash("Cliente$2025", 12);
+
+  const client = await prisma.profile.create({
+    data: {
+      full_name: "Cliente de Prueba",
+      email: "cliente@arepas.com",
+      password: clientPass,
+      is_admin: false,
+      is_approved: true,
+      role: "user",
+      status: "approved",
+      carts: {
+        create: {
+          cart_items: {
+            create: [
+              {
+                product: { connect: { id: reina?.id }},
+                quantity: 2,
+              },
+            ],
+          },
+        },
+      },
+      orders: {
+        create: [
+          {
+            total_amount_in_cents: 1700,
+            status: "completed",
+            order_items: {
+              create: [
+                {
+                  product_name: "Arepa Reina Pepiada",
+                  product_price_in_cents: 850,
+                  quantity: 2,
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  });
+
+  console.log(`🛍️ Usuario cliente de prueba creado: ${client.email}`);
 }
 
 main()
   .catch((e) => {
     console.error("❌ Error al ejecutar el seed:", e);
+    process.exit(1);
   })
   .finally(async () => {
     await prisma.$disconnect();
+    console.log("🌾 Seed finalizado correctamente.");
   });
+

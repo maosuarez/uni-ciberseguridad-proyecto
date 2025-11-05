@@ -11,9 +11,11 @@ import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
+import { CheckCircle } from "lucide-react"
 
 export default function SignUpPage() {
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
@@ -21,6 +23,7 @@ export default function SignUpPage() {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
+    setSuccess(null)
 
     const formData = new FormData(e.currentTarget)
 
@@ -30,18 +33,12 @@ export default function SignUpPage() {
       if (result.error) {
         setError(result.error)
       } else {
-        // Auto-login después del registro
-        const email = formData.get("email") as string
-        const password = formData.get("password") as string
-
-        await signIn("credentials", {
-          email,
-          password,
-          redirect: false,
-        })
-
-        router.push("/")
-        router.refresh()
+        setSuccess(
+          result.message ||
+            "Cuenta creada exitosamente. Tu solicitud está pendiente de aprobación por un administrador.",
+        )
+        // Limpiar el formulario
+        e.currentTarget.reset()
       }
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "Error al crear la cuenta")
@@ -127,6 +124,20 @@ export default function SignUpPage() {
                     />
                   </div>
                   {error && <p className="text-sm text-red-600 bg-red-50 p-3 rounded-md">{error}</p>}
+                  {success && (
+                    <div className="bg-green-50 border border-green-200 p-4 rounded-md">
+                      <div className="flex items-start gap-3">
+                        <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-green-900">¡Registro exitoso!</p>
+                          <p className="text-sm text-green-700 mt-1">{success}</p>
+                          <p className="text-xs text-green-600 mt-2">
+                            Recibirás un cupón de bienvenida una vez que tu cuenta sea aprobada.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   <Button type="submit" className="w-full bg-amber-600 hover:bg-amber-700" disabled={isLoading}>
                     {isLoading ? "Creando cuenta..." : "Crear Cuenta"}
                   </Button>

@@ -5,6 +5,24 @@ import { requireAuth } from "@/lib/auth-utils"
 import { revalidatePath } from "next/cache"
 import { Cart } from "@/lib/types"
 
+/*
+  Funciones para la actualizacion y ajuste de los items en el carrito.
+
+  - addToCart: Recibe el id del producto y la cantidad.
+              Actualiza el valor de la cantidad del producto 
+              o crea uno nuevo en el carro asociado al usuario.
+
+  - updateCartItemQuantity: Actualiza la cantidad de un item en caso
+                            de que ya este agregado al carrito
+
+  - removeCartItem: Elimina un item en especifico, para sacarlo del carro
+                    por completo
+  
+  - clearCart: Borra todo lo que haya en el carro, deja el carro vacio
+
+  - applyCouponToCart: Aplicar los descuentos del cupon a un carrito
+*/
+
 export async function addToCart(productId: string, quantity: number) {
   const user = await requireAuth()
 
@@ -12,11 +30,11 @@ export async function addToCart(productId: string, quantity: number) {
   if (!productId || typeof productId !== "string") {
     throw new Error("ID de producto inválido")
   }
-
+  // Validacion en la cantidad del producto
   if (!quantity || quantity < 1 || !Number.isInteger(quantity)) {
     throw new Error("Cantidad inválida")
   }
-
+  // Transaccion para la base de datos
   try {
     await prisma.$transaction(async (tx:Prisma.TransactionClient) => {
       // Verificar que el producto existe y está disponible
@@ -28,11 +46,11 @@ export async function addToCart(productId: string, quantity: number) {
         throw new Error("Producto no disponible")
       }
 
-      // Obtener o crear carrito
+      // Obtener o crear carrito asociado al usuario
       let cart: Cart | null = await tx.cart.findUnique({
         where: { user_id: user.id },
       })
-
+ 
       if (!cart) {
         cart = await tx.cart.create({
           data: { user_id: user.id },
@@ -86,7 +104,7 @@ export async function updateCartItemQuantity(cartItemId: string, quantity: numbe
   if (quantity < 1 || !Number.isInteger(quantity)) {
     throw new Error("La cantidad debe ser al menos 1")
   }
-
+  // Transaccion para actualizar la base de datos
   try {
     const cartItem = await prisma.cartItem.findUnique({
       where: { id: cartItemId },
@@ -156,5 +174,32 @@ export async function clearCart() {
   } catch (error) {
     console.error("[v0] Error al limpiar carrito:", error)
     throw error
+  }
+}
+
+export async function applyCouponToCart(couponCode: string) {
+  const user = await requireAuth()
+
+  if (!couponCode || typeof couponCode !== "string") {
+    throw new Error("Código de cupón inválido")
+  }
+
+  try {
+    const { validateCoupon } = await import("./coupons")
+    const validation = await validateCoupon(couponCode, user.id)
+
+    if (validation.error) {
+      return { error: validation.error }
+    }
+
+    // Guardar el cupón aplicado en la sesión o base de datos
+    // Por ahora lo retornamos para usarlo en el frontend
+    return {
+      success: true,
+      coupon: validation.coupon,
+    }
+  } catch (error) {
+    console.error("[v0] Error al aplicar cupón:", error)
+    return { error: "Error al aplicar cupón" }
   }
 }
