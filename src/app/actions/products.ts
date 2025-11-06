@@ -30,7 +30,7 @@ export async function createProduct(productData: ProductData) {
     throw new Error("Precio inválido")
   }
 
-  const image_url = productData.image ? await handleSubmitImage(productData.image) : ''
+  const image_url = productData.image ? await handleSubmitImage(productData.image) : null;
 
   try {
     await prisma.product.create({
@@ -72,7 +72,10 @@ export async function updateProduct(productId: string, productData: ProductData)
     throw new Error("Precio inválido")
   }
 
-  const image_url = !productData.image ? await handleSubmitImage(productData.image) : ''
+  let newImageUrl: string | undefined = undefined;
+  if (productData.image) {
+    newImageUrl = await handleSubmitImage(productData.image);
+  }
 
   try {
     await prisma.product.update({
@@ -81,9 +84,9 @@ export async function updateProduct(productId: string, productData: ProductData)
         name: productData.name,
         description: productData.description,
         price_in_cents: productData.price / 100,
-        image_url: image_url,
         category: productData.category,
         available: productData.available,
+        ...(newImageUrl ? { image_url: newImageUrl } : {}),
       },
     })
 
