@@ -30,7 +30,8 @@ export async function Navbar() {
     })
 
     if (cart?.cart_items) {
-      cartItemCount = cart.cart_items.reduce((sum, item) => sum + item.quantity, 0)
+      cartItemCount = cart.cart_items.reduce((sum: number, item: { quantity: number }) => sum + item.quantity, 0)
+
     }
   }
 

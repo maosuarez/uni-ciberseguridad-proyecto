@@ -82,7 +82,9 @@ export default async function OrdersPage() {
           </Card>
         ) : (
           <div className="space-y-6">
-            {orders.map((order) => (
+
+            {orders.map((order: any) => (
+
               <Card key={order.id} className="border-amber-200">
                 <CardHeader className="bg-amber-50/50">
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -112,7 +114,8 @@ export default async function OrdersPage() {
                 </CardHeader>
                 <CardContent className="pt-6">
                   <div className="space-y-3">
-                    {order.order_items?.map((item) => (
+                    {order.order_items?.map((item: any) => (
+
                       <div
                         key={item.id}
                         className="flex justify-between items-center pb-3 border-b border-amber-100 last:border-0"

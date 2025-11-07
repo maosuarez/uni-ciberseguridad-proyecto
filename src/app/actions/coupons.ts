@@ -189,7 +189,8 @@ export async function getCouponByUser() {
     });
 
 
-    const codes = coupons? coupons.map(c => c.code) : []
+    const codes = coupons ? coupons.map((c: { code: string }) => c.code) : []
+
 
     return {success:true, couponsCodes:codes};
   } catch (error) {
