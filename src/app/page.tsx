@@ -18,7 +18,13 @@ export default async function HomePage() {
     },
   })
 
-  const categories = Array.from(new Set(products.map((p: any) => p.category).filter(Boolean)))
+  const categories: string[] = Array.from(
+    new Set(
+      products
+        .map((p: any) => p.category as string)
+        .filter((c): c is string => Boolean(c))
+    )
+  )
 
   //const [shownProducts, setShownProducts] = useState<Array<Product>>()
 
