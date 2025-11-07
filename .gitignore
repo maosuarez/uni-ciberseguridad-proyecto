@@ -3,6 +3,8 @@
 # Ignorar la base de datos de desarrollo de Prisma
 /prisma/dev.db
 
+/prisma/prisma
+
 # Ignorar todas las migraciones de Prisma
 /prisma/migrations/
 
