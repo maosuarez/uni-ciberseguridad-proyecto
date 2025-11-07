@@ -1,0 +1,9 @@
+# .env.example (comiteable)
+DATABASE_URL="file:./prisma/dev.db"
+NEXTAUTH_SECRET=""            # dejar vacío para generarlo automáticamente
+#se puede generar instalando openssl en tu máquina y corriendo el siguiente comando:
+#openssl rand -base64 32
+ADMIN_NAME="Administrador"
+ADMIN_EMAIL="admin@arepas.com"
+ADMIN_PASSWORD="Admin$2025"
+PORT=3000
