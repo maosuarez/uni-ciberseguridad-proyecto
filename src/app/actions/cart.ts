@@ -56,6 +56,8 @@ export async function addToCart(productId: string, quantity: number) {
           data: { user_id: user.id },
         })
       }
+      
+      cart = cart! // ✅ asegura que no sea null
 
       // Verificar si el item ya existe en el carrito
       const existingItem = await tx.cartItem.findUnique({

@@ -18,7 +18,13 @@ export default async function HomePage() {
     },
   })
 
-  const categories = Array.from(new Set(products.map((p) => p.category).filter(Boolean)))
+const categories: string[] = Array.from(
+  new Set(
+    products
+      .map((p: any) => p.category as string)
+      .filter((c: any): c is string => Boolean(c))
+  )
+)
 
   //const [shownProducts, setShownProducts] = useState<Array<Product>>()
 
@@ -52,15 +58,16 @@ export default async function HomePage() {
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {products.map((product) => {
-            const averageRating = calculateAverageRating(product.reviews || [])
+          {products.map((product: unknown) => {
+            const typedProduct = product as Product
+            const averageRating = calculateAverageRating(typedProduct.reviews || [])
 
             return (
               <ProductCard
-                key={product.id}
-                product={product as unknown as Product}
+                key={typedProduct.id}
+                product={typedProduct}
                 averageRating={averageRating}
-                reviewCount={product.reviews?.length || 0}
+                reviewCount={typedProduct.reviews?.length || 0}
               />
             )
           })}
