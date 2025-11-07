@@ -23,7 +23,7 @@ export function CheckoutButton({ totalAmount, cartId }: CheckoutButtonProps) {
 
       // Simulación de carga de pago
       await new Promise((res) => setTimeout(res, 3000))
-
+ 
       if (result.status === "succeeded") {
         redirect(`/checkout/success?orderId=${encodeURIComponent(result.order_id)}`)
       } else {
