@@ -20,49 +20,41 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("Email y contraseña son requeridos")
-        }
+  try {
+    if (!credentials?.email || !credentials?.password) return null;
 
-        // Validación de entrada para prevenir inyecciones
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-        if (!emailRegex.test(credentials.email)) {
-          throw new Error("Email inválido")
-        }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(credentials.email)) return null;
 
-        const user = await prisma.profile.findUnique({
-          where: { email: credentials.email },
-        })
+    const user = await prisma.profile.findUnique({ where: { email: credentials.email } });
+    if (!user || !user.password || user.status !== "approved") return null;
 
-        if (!user || !user.password) {
-          throw new Error("Credenciales inválidas")
-        }
+    const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
+    if (!isPasswordValid) return null;
 
-        if (user.status !== "approved") {
-          throw new Error("Tu cuenta está pendiente de aprobación por un administrador")
-        }
-
-        const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
-
-        if (!isPasswordValid) {
-          throw new Error("Credenciales inválidas")
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.full_name,
-          image: user.avatar_url,
-        }
-      },
+    return {
+      id: user.id,
+      name: user.full_name,
+      email: user.email,
+      image: user.avatar_url,
+      role: user.role,
+      status: user.status,
+      is_admin: user.is_admin,
+    };
+  } catch (err) {
+    console.error("Authorize error:", err);
+    return null;
+  }
+}
+,
     }),
   ],
   session: {
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 días
+    maxAge: 30 * 24 * 60 * 60,
   },
   jwt: {
-    maxAge: 30 * 24 * 60 * 60, // 30 días
+    maxAge: 30 * 24 * 60 * 60,
   },
   pages: {
     signIn: "/auth/login",
@@ -72,12 +64,8 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id
-        const dbUser = await prisma.profile.findUnique({
-          where: { id: user.id },
-          select: { role: true, status: true },
-        })
-        token.role = dbUser?.role || "user"
-        token.status = dbUser?.status || "pending"
+        token.role = user.role || "user"
+        token.status = user.status || "pending"
       }
 
       if (trigger === "update" && token.id) {
@@ -100,16 +88,12 @@ export const authOptions: NextAuthOptions = {
       return session
     },
     async signIn({ user, account }) {
-      // Si es OAuth (Google), verificar y actualizar status si es necesario
       if (account?.provider === "google") {
         const dbUser = await prisma.profile.findUnique({
           where: { email: user.email! },
         })
-
-        // Si el usuario no está aprobado, bloquear el acceso
-        if (dbUser && dbUser.status !== "approved") {
-          return false
-        }
+        if (!dbUser) return false
+        if (dbUser.status !== "approved") return false
       }
       return true
     },
