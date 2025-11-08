@@ -1,5 +1,9 @@
+// src/components/navbar.tsx
+"use client"
+
 import Link from "next/link"
-import { getCurrentUser } from "@/lib/auth-utils"
+import { useState, useEffect } from "react"
+import { getSession, signOut } from "next-auth/react"
 import { prisma } from "@/lib/db"
 import { Button } from "@/components/ui/button"
 import { ShoppingCart, User, LogOut, Shield, Package } from "lucide-react"
@@ -13,27 +17,23 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 
-export async function Navbar() {
-  const user = await getCurrentUser()
+export function Navbar() {
+  const [user, setUser] = useState<any>(null)
+  const [cartItemCount, setCartItemCount] = useState(0)
 
-  let cartItemCount = 0
-  if (user) {
-    const cart = await prisma.cart.findUnique({
-      where: { user_id: user.id },
-      include: {
-        cart_items: {
-          select: {
-            quantity: true,
-          },
-        },
-      },
+  useEffect(() => {
+    // Obtener la sesión actual
+    getSession().then(async (session) => {
+      setUser(session?.user ?? null)
+
+      if (session?.user) {
+        // Llamada al backend para obtener cantidad de items en carrito
+        const res = await fetch(`/api/cart/count?userId=${session.user.id}`)
+        const data = await res.json()
+        setCartItemCount(data.count || 0)
+      }
     })
-
-    if (cart?.cart_items) {
-      cartItemCount = cart.cart_items.reduce((sum: number, item: { quantity: number }) => sum + item.quantity, 0)
-
-    }
-  }
+  }, [])
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-amber-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
@@ -70,6 +70,7 @@ export async function Navbar() {
                     )}
                   </Button>
                 </DropdownMenuTrigger>
+
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel>
                     <div className="flex flex-col space-y-1">
@@ -83,13 +84,16 @@ export async function Navbar() {
                       )}
                     </div>
                   </DropdownMenuLabel>
+
                   <DropdownMenuSeparator />
+
                   <DropdownMenuItem asChild>
                     <Link href="/orders" className="cursor-pointer">
                       <Package className="h-4 w-4 mr-2" />
                       Mis Pedidos
                     </Link>
                   </DropdownMenuItem>
+
                   {user.role === "admin" && (
                     <>
                       <DropdownMenuSeparator />
@@ -114,12 +118,19 @@ export async function Navbar() {
                       </DropdownMenuItem>
                     </>
                   )}
+
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/api/auth/signout" className="flex w-full items-center gap-2 cursor-pointer">
+
+                  <DropdownMenuItem>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full justify-start gap-2"
+                      onClick={() => signOut({ callbackUrl: "/" })}
+                    >
                       <LogOut className="h-4 w-4" />
                       Cerrar Sesión
-                    </Link>
+                    </Button>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

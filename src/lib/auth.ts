@@ -1,3 +1,4 @@
+// src/lib/auth.ts
 import type { NextAuthOptions } from "next-auth"
 import { PrismaAdapter } from "@next-auth/prisma-adapter"
 import GoogleProvider from "next-auth/providers/google"
@@ -20,63 +21,44 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-  try {
-    if (!credentials?.email || !credentials?.password) return null;
+        if (!credentials?.email || !credentials?.password)
+          throw new Error("Por favor ingresa email y contraseña")
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(credentials.email)) return null;
+        const user = await prisma.profile.findUnique({
+          where: { email: credentials.email },
+        })
 
-    const user = await prisma.profile.findUnique({ where: { email: credentials.email } });
-    if (!user || !user.password || user.status !== "approved") return null;
+        if (!user) throw new Error("Usuario no encontrado")
+        if (!user.password) throw new Error("Este usuario solo puede iniciar sesión con Google")
+        if (user.status !== "approved")
+          throw new Error("Tu cuenta está pendiente de aprobación por un administrador")
 
-    const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
-    if (!isPasswordValid) return null;
+        const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
+        if (!isPasswordValid) throw new Error("Contraseña incorrecta")
 
-    return {
-      id: user.id,
-      name: user.full_name,
-      email: user.email,
-      image: user.avatar_url,
-      role: user.role,
-      status: user.status,
-      is_admin: user.is_admin,
-    };
-  } catch (err) {
-    console.error("Authorize error:", err);
-    return null;
-  }
-}
-,
+        return {
+          id: user.id,
+          name: user.full_name,
+          email: user.email,
+          image: user.avatar_url,
+          role: user.role || "user",
+          status: user.status || "pending",
+        }
+      },
     }),
   ],
-  session: {
-    strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60,
-  },
-  jwt: {
-    maxAge: 30 * 24 * 60 * 60,
-  },
   pages: {
-    signIn: "/auth/login",
-    error: "/auth/error",
+    signIn: "/auth/login", // página de login
   },
+  session: { strategy: "jwt", maxAge: 30 * 24 * 60 * 60 },
+  jwt: { maxAge: 30 * 24 * 60 * 60 },
   callbacks: {
-    async jwt({ token, user, trigger }) {
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id
         token.role = user.role || "user"
         token.status = user.status || "pending"
       }
-
-      if (trigger === "update" && token.id) {
-        const dbUser = await prisma.profile.findUnique({
-          where: { id: token.id as string },
-          select: { role: true, status: true },
-        })
-        token.role = dbUser?.role || "user"
-        token.status = dbUser?.status || "pending"
-      }
-
       return token
     },
     async session({ session, token }) {
@@ -87,26 +69,10 @@ export const authOptions: NextAuthOptions = {
       }
       return session
     },
-    async signIn({ user, account }) {
-      if (account?.provider === "google") {
-        const dbUser = await prisma.profile.findUnique({
-          where: { email: user.email! },
-        })
-        if (!dbUser) return false
-        if (dbUser.status !== "approved") return false
-      }
-      return true
-    },
-  },
-  cookies: {
-    sessionToken: {
-      name: `next-auth.session-token`,
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
-      },
+    async redirect({ url, baseUrl }) {
+      // Redirección después de login y logout
+      if (url === "/") return "/"
+      return baseUrl
     },
   },
 }

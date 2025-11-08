@@ -10,43 +10,21 @@ export async function registerUser(formData: FormData) {
   const password = formData.get("password") as string
   const repeatPassword = formData.get("repeatPassword") as string
 
-  // Validaciones de seguridad
-  if (!name || !email || !password || !repeatPassword) {
-    return { error: "Todos los campos son requeridos" }
-  }
+  if (!name || !email || !password || !repeatPassword) return { error: "Todos los campos son requeridos" }
 
-  // Validación de email
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  if (!emailRegex.test(email)) {
-    return { error: "Email inválido" }
-  }
+  if (!emailRegex.test(email)) return { error: "Email inválido" }
 
-  // Validación de contraseña
-  if (password.length < 8) {
-    return { error: "La contraseña debe tener al menos 8 caracteres" }
-  }
+  if (password.length < 8) return { error: "La contraseña debe tener al menos 8 caracteres" }
+  if (password !== repeatPassword) return { error: "Las contraseñas no coinciden" }
 
-  if (password !== repeatPassword) {
-    return { error: "Las contraseñas no coinciden" }
-  }
-
-  // Validación de contraseña fuerte
   const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/
-  if (!passwordRegex.test(password)) {
-    return { error: "La contraseña debe contener al menos una mayúscula, una minúscula y un número" }
-  }
+  if (!passwordRegex.test(password)) return { error: "La contraseña debe contener al menos una mayúscula, una minúscula y un número" }
 
   try {
-    // Verificar si el usuario ya existe
-    const existingUser = await prisma.profile.findUnique({
-      where: { email },
-    })
+    const existingUser = await prisma.profile.findUnique({ where: { email } })
+    if (existingUser) return { error: "El email ya está registrado" }
 
-    if (existingUser) {
-      return { error: "El email ya está registrado" }
-    }
-
-    // Hash de la contraseña con bcrypt (10 rounds)
     const hashedPassword = await bcrypt.hash(password, 10)
 
     const newUser = await prisma.profile.create({
@@ -54,8 +32,8 @@ export async function registerUser(formData: FormData) {
         full_name: name,
         email,
         password: hashedPassword,
-        status: "pending", // Usuario queda en lista de espera
-        role: "user", // Rol por defecto
+        status: "pending",
+        role: "user",
       },
     })
 
@@ -66,14 +44,13 @@ export async function registerUser(formData: FormData) {
       data: {
         code: welcomeCouponCode,
         hash: couponHash,
-        discount: 15, // 15% de descuento
+        discount: 15,
         description: "Cupón de bienvenida",
-        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 días
+        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         maxUses: 1,
       },
     })
 
-    // Asignar cupón al usuario
     await prisma.couponUsage.create({
       data: {
         user_id: newUser.id,
@@ -87,7 +64,7 @@ export async function registerUser(formData: FormData) {
         "Cuenta creada exitosamente. Tu solicitud está pendiente de aprobación por un administrador. Recibirás un cupón de bienvenida una vez aprobada.",
     }
   } catch (error) {
-    console.error("[v0] Error al registrar usuario:", error)
+    console.error("Error al registrar usuario:", error)
     return { error: "Error al crear la cuenta. Por favor intenta de nuevo." }
   }
 }

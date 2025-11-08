@@ -1,32 +1,28 @@
+// src/app/page.tsx
 import { prisma } from "@/lib/db"
 import { Navbar } from "@/components/navbar"
 import { ProductCard } from "@/components/product-card"
+import { requireAuth } from "@/lib/auth-utils"
 import type { Product } from "@/lib/types"
 import { calculateAverageRating } from "@/lib/utils/format"
-// import { useState } from "react"
 
 export default async function HomePage() {
+  // 🚨 Esto protege la página y devuelve solo el user si hay sesión válida
+  await requireAuth()
+
   const products = await prisma.product.findMany({
     where: { available: true },
     orderBy: { created_at: "desc" },
     include: {
-      reviews: {
-        select: {
-          rating: true,
-        },
-      },
+      reviews: { select: { rating: true } },
     },
   })
 
-const categories: string[] = Array.from(
-  new Set(
-    products
-      .map((p: any) => p.category as string)
-      .filter((c: any): c is string => Boolean(c))
+  const categories: string[] = Array.from(
+    new Set(
+      products.map((p: any) => p.category).filter((c: any): c is string => Boolean(c))
+    )
   )
-)
-
-  //const [shownProducts, setShownProducts] = useState<Array<Product>>()
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50">
@@ -34,7 +30,9 @@ const categories: string[] = Array.from(
 
       <main className="container mx-auto px-4 py-8">
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-amber-900 mb-4">Bienvenido a Arepabuelas</h1>
+          <h1 className="text-4xl md:text-5xl font-bold text-amber-900 mb-4">
+            Bienvenido a Arepabuelas
+          </h1>
           <p className="text-lg text-amber-800 max-w-2xl mx-auto">
             Descubre nuestras deliciosas arepas artesanales hechas con amor y los mejores ingredientes. Tradición y
             sabor en cada bocado.
@@ -50,9 +48,8 @@ const categories: string[] = Array.from(
                   className="px-4 py-2 rounded-full bg-white border border-amber-200 text-amber-900 text-sm font-medium cursor-pointer"
                 >
                   {category}
-                </span> 
-                )
-              )}
+                </span>
+              ))}
             </div>
           </div>
         )}
@@ -75,7 +72,9 @@ const categories: string[] = Array.from(
 
         {products.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-lg text-muted-foreground">No hay productos disponibles en este momento.</p>
+            <p className="text-lg text-muted-foreground">
+              No hay productos disponibles en este momento.
+            </p>
           </div>
         )}
       </main>
