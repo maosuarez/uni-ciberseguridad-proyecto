@@ -42,4 +42,4 @@ EXPOSE 3000
 # Al iniciar el contenedor:
 # - Asegura migraciones
 # - Ejecuta la app
-CMD npx prisma migrate deploy && npm start
+CMD ["npm", "start"]
