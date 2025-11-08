@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { signIn } from "next-auth/react"
+import { getSession, signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -31,11 +31,26 @@ export default function LoginPage() {
       })
 
       if (result?.error) {
-        setError("Credenciales inválidas")
-      } else {
-        router.push("/")
+        setError(result.error) // muestra el error real desde NextAuth
+        return
+      }
+
+      // Redirige según rol y status
+      // No es necesario esperar getSession() en dev
+      if (result?.ok) {
+        // Opcional: obtener sesión actual (si quieres datos extras)
+        const session = await getSession()
+
+        if (session?.user?.status === "pending") {
+          router.push("/pending-approval")
+        } else if (session?.user?.role === "admin") {
+          router.push("/admin")
+        } else {
+          router.push("/")
+        }
         router.refresh()
       }
+
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "Error al iniciar sesión")
     } finally {

@@ -1,22 +1,7 @@
-version: "3.9"
-
 services:
-  web:
-    container_name: nextjs_app
-    build:
-      context: .
-      dockerfile: Dockerfile
+  app:
+    build: .
     env_file:
       - .env
-    environment:
-      NODE_ENV: production
-      DATABASE_URL: "file:/app/prisma/dev.db"
-      PORT: 3000
     ports:
-      - "3000:3000"
-    volumes:
-      # Persistencia completa del directorio prisma
-      - ./prisma:/app/prisma
-    command: >
-      sh -c "npx prisma migrate deploy &&
-             npm start"
+      - "80:3000"
