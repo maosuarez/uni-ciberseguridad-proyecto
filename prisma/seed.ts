@@ -37,12 +37,13 @@ async function main() {
   const hashedAdminPass = await bcrypt.hash(process.env.ADMIN_PASSWORD!, 12);
 
   // Crear usuario administrador
-  let admin = await prisma.profile.findUnique({
+
+  const existingAdmin = await prisma.profile.findUnique({
     where: { email: process.env.ADMIN_EMAIL! },
   });
 
-  if (!admin) {
-    admin = await prisma.profile.create({
+  if (!existingAdmin) {
+    await prisma.profile.create({
       data: {
         full_name: process.env.ADMIN_NAME!,
         email: process.env.ADMIN_EMAIL!,
@@ -54,7 +55,7 @@ async function main() {
       },
     });
   }
-
+  
   console.log(`👑 Usuario administrador creado: ${admin.email}`);
 
   // Obtener producto para carrito de prueba
