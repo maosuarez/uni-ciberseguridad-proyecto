@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Clock, Mail } from "lucide-react"
 import Link from "next/link"
+import { signOut } from "next-auth/react"
+
 
 export default async function PendingApprovalPage() {
   const session = await getServerSession(authOptions)
@@ -66,9 +68,14 @@ export default async function PendingApprovalPage() {
               <li>Recibirás un cupón de bienvenida al ser aprobado</li>
             </ul>
           </div>
-          <Button asChild variant="outline" className="w-full bg-transparent">
-            <Link href="/auth/login">Cerrar sesión</Link>
-          </Button>
+          <Button
+            variant="outline"
+            className="w-full bg-transparent"
+            onClick={() => signOut({ callbackUrl: "http://192.168.0.17:3000/auth/login" })}
+            >
+            Cerrar sesión
+            </Button>
+
         </CardContent>
       </Card>
     </div>
