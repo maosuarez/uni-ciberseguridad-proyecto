@@ -1,4 +1,5 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "./db"
+
 import bcrypt from "bcryptjs";
 
 async function main() {
@@ -56,7 +57,7 @@ async function main() {
     });
   }
   
-  console.log(`👑 Usuario administrador creado: ${admin.email}`);
+  console.log(`👑 Usuario administrador creado: ${process.env.ADMIN_EMAIL}`);
 
   // Obtener producto para carrito de prueba
   const reina = await prisma.product.findFirst({ where: { name: "Arepa Reina Pepiada" } });

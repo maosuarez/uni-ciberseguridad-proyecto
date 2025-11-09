@@ -1,11 +1,35 @@
-# Evita copiar cosas innecesarias al contenedor
+# Dependencias locales
 node_modules
 npm-debug.log
+yarn-error.log
+pnpm-error.log
+
+# Control de versiones
 .git
 .gitignore
+.gitattributes
+
+# Config y tooling local
+.vscode
+.env.local
+.env.development
+*.md
+
+# Salidas de build
+.next
+.next/cache
+dist
+out
+
+# Docker
 Dockerfile
 docker-compose.yml
-*.md
-.vscode
-dist
-.next/cache
+
+# Prisma
+prisma/*.db
+prisma/migrations/**/README.md
+prisma/*.log
+
+# SO
+.DS_Store
+Thumbs.db

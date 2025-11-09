@@ -1,15 +1,15 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
-import { signIn, getSession } from "next-auth/react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
 
+import { getSession, signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useState } from "react"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -48,9 +48,27 @@ export default function LoginPage() {
         } else {
           router.push("/")
         }
+        setError(result.error) // muestra el error real desde NextAuth
+        return
+      }
+
+      // Redirige según rol y status
+      // No es necesario esperar getSession() en dev
+      if (result?.ok) {
+        // Opcional: obtener sesión actual (si quieres datos extras)
+        const session = await getSession()
+
+        if (session?.user?.status === "pending") {
+          router.push("/pending-approval")
+        } else if (session?.user?.role === "admin") {
+          router.push("/admin")
+        } else {
+          router.push("/")
+        }
 
         router.refresh()
       }
+
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Error al iniciar sesión")
     } finally {
